@@ -1,0 +1,66 @@
+{
+    "name": "Weekly Cognition Report",
+    "nodes": [
+        {
+            "parameters": {
+                "triggerTimes": {
+                    "item": [
+                        {
+                            "mode": "everyWeek",
+                            "hour": 9
+                        }
+                    ]
+                }
+            },
+            "name": "Cron",
+            "type": "n8n-nodes-base.cron",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "issue",
+                "operation": "getAll",
+                "owner": "crystalclearhouse-data",
+                "repository": "marketing-cognition-system",
+                "filters": {
+                    "state": "open",
+                    "labels": [
+                        "signal"
+                    ],
+                    "since": "={{new Date(new Date().setDate(new Date().getDate()-7)).toISOString()}}"
+                }
+            },
+            "name": "Get Recent Signals",
+            "type": "n8n-nodes-base.github",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ],
+            "credentials": {
+                "githubApi": {
+                    "id": "github_main",
+                    "name": "GitHub Main"
+                }
+            }
+        }
+        // Additional nodes for Notion creation and ClickUp tasks would follow similar patterns
+    ],
+    "connections": {
+        "Cron": {
+            "main": [
+                [
+                    {
+                        "node": "Get Recent Signals",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

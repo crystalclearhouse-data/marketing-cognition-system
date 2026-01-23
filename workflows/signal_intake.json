@@ -1,0 +1,87 @@
+{
+    "name": "Signal Intake Webhook",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "signal-intake",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "owner": "crystalclearhouse-data",
+                "repository": "marketing-cognition-system",
+                "title": "={{$json.type}}: {{$json.text.substring(0,50)}}...",
+                "body": "Source: {{$json.source}}\nURL: {{$json.url}}\n\n{{$json.text}}",
+                "labels": [
+                    "signal"
+                ]
+            },
+            "name": "Create GitHub Issue",
+            "type": "n8n-nodes-base.github",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ],
+            "credentials": {
+                "githubApi": {
+                    "id": "github_main",
+                    "name": "GitHub Main"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "taskName": "={{$json.type}} from {{$json.source}}",
+                "listId": "TODO_FILL_LIST_ID",
+                "description": "={{$json.text}}\n\nGitHub Issue: {{$node[\"Create GitHub Issue\"].json[\"html_url\"]}}"
+            },
+            "name": "Create ClickUp Task",
+            "type": "n8n-nodes-base.clickUp",
+            "typeVersion": 1,
+            "position": [
+                650,
+                300
+            ],
+            "credentials": {
+                "clickUpApi": {
+                    "id": "clickup_main",
+                    "name": "ClickUp Main"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Create GitHub Issue",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create GitHub Issue": {
+            "main": [
+                [
+                    {
+                        "node": "Create ClickUp Task",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

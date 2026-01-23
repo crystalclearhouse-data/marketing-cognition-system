@@ -1,0 +1,61 @@
+{
+    "name": "GitHub -> Notion Sync",
+    "nodes": [
+        {
+            "parameters": {
+                "events": [
+                    "push"
+                ],
+                "owner": "crystalclearhouse-data",
+                "repository": "marketing-cognition-system"
+            },
+            "name": "GitHub Trigger",
+            "type": "n8n-nodes-base.githubTrigger",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ],
+            "credentials": {
+                "githubApi": {
+                    "id": "github_main",
+                    "name": "GitHub Main"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "authentication": "oAuth2",
+                "resource": "database",
+                "operation": "get",
+                "databaseId": "TODO_FILL_DATABASE_ID"
+            },
+            "name": "Notion Update",
+            "type": "n8n-nodes-base.notion",
+            "typeVersion": 2,
+            "position": [
+                450,
+                300
+            ],
+            "credentials": {
+                "notionApi": {
+                    "id": "notion_main",
+                    "name": "Notion Main"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "GitHub Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Notion Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
