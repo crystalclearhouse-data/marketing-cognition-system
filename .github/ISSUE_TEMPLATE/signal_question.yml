@@ -1,0 +1,45 @@
+name: Signal Question
+description: Log a question received from a customer or prospect
+title: "[QUESTION]: "
+labels: ["signal", "question"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: Who asked this?
+      placeholder: "Jane Doe @ StartUp Inc"
+    validations:
+      required: true
+  - type: dropdown
+    id: segment
+    attributes:
+      label: Segment
+      options:
+        - Enterprise
+        - SMB
+        - Agency
+        - Other
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What exactly did they ask?
+      placeholder: "Do you integrate with HubSpot?"
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL (Context)
+      description: Link to conversation
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority / Frequency
+      options:
+        - Low (Rare)
+        - Medium (Occasional)
+        - High (Frequent / Blocker)
+    validations:
+      required: true

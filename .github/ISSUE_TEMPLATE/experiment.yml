@@ -1,0 +1,52 @@
+name: Growth Experiment
+description: Propose or track a growth experiment
+title: "[EXPERIMENT]: "
+labels: ["experiment"]
+body:
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Hypothesis
+      description: If we do X, then Y will happen because Z.
+      placeholder: "If we change the CTA color to green, click-through will increase by 10% because it stands out more."
+    validations:
+      required: true
+  - type: input
+    id: metric
+    attributes:
+      label: Primary Metric
+      description: What determines success?
+      placeholder: "Conversion Rate"
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup / Implementation
+      description: What needs to be built or changed?
+  - type: input
+    id: start_date
+    attributes:
+      label: Start Date
+      placeholder: "YYYY-MM-DD"
+  - type: input
+    id: end_date
+    attributes:
+      label: End Date
+      placeholder: "YYYY-MM-DD"
+  - type: dropdown
+    id: status
+    attributes:
+      label: Status
+      options:
+        - Proposed
+        - Live
+        - Completed
+        - Killed
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome / Learnings
+      description: Fill this after the experiment concludes.

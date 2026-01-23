@@ -1,0 +1,49 @@
+name: Signal Objection
+description: Log an objection received from a customer or prospect
+title: "[OBJECTION]: "
+labels: ["signal", "objection"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: Who raised this objection? (e.g., Prospect Name, Company, Social Handle)
+      placeholder: "John Doe @ Acme Corp"
+    validations:
+      required: true
+  - type: dropdown
+    id: segment
+    attributes:
+      label: Segment
+      options:
+        - Enterprise
+        - SMB
+        - Agency
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: quote
+    attributes:
+      label: Objection Quote
+      description: What exactly did they say?
+      placeholder: "Your pricing is too high compared to X..."
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL (Context)
+      description: Link to conversation, email, or social post
+    validations:
+      required: false
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Low (Annoyance)
+        - Medium (Hesitancy)
+        - High (Deal Breaker)
+    validations:
+      required: true

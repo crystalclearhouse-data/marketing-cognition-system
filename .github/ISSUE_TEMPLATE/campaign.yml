@@ -1,0 +1,42 @@
+name: Campaign
+description: Plan and track a marketing campaign
+title: "[CAMPAIGN]: "
+labels: ["campaign"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What is the goal of this campaign?
+    validations:
+      required: true
+  - type: input
+    id: audience
+    attributes:
+      label: Target Audience
+      description: Who are we talking to?
+  - type: textarea
+    id: channels
+    attributes:
+      label: Channels
+      description: Where will this run? (Email, LinkedIn, Ads, etc.)
+  - type: textarea
+    id: assets
+    attributes:
+      label: Key Assets
+      description: Links to copy, design, landing pages
+  - type: input
+    id: start_date
+    attributes:
+      label: Start Date
+      placeholder: "YYYY-MM-DD"
+  - type: input
+    id: end_date
+    attributes:
+      label: End Date
+      placeholder: "YYYY-MM-DD"
+  - type: input
+    id: kpi
+    attributes:
+      label: Success KPI
+      placeholder: "100 Leads @ <$50 CPA"
