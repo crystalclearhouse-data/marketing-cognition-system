@@ -1,0 +1,38 @@
+{
+  "name": "marketing-cognition-system",
+  "version": "1.0.0",
+  "description": "The \"forever-compounding\" engine for marketing: **Sense → Decide → Act → Measure → Remember → Evolve**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crystalclearhouse-data/marketing-cognition-system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/crystalclearhouse-data/marketing-cognition-system/issues"
+  },
+  "homepage": "https://github.com/crystalclearhouse-data/marketing-cognition-system#readme",
+  "dependencies": {
+    "@octokit/auth-app": "^8.1.2",
+    "next": "^16.1.4",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.0.10",
+    "@types/react": "^19.2.9",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
+  }
+}

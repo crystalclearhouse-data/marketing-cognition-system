@@ -1,5 +1,5 @@
 {
-    "name": "Signal Intake Webhook",
+    "name": "signal_intake",
     "nodes": [
         {
             "parameters": {
@@ -17,35 +17,31 @@
         },
         {
             "parameters": {
-                "owner": "crystalclearhouse-data",
-                "repository": "marketing-cognition-system",
-                "title": "={{$json.type}}: {{$json.text.substring(0,50)}}...",
-                "body": "Source: {{$json.source}}\nURL: {{$json.url}}\n\n{{$json.text}}",
-                "labels": [
-                    "signal"
-                ]
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{$json.body.verdict}}",
+                            "operation": "notEqual",
+                            "value2": "SAFE"
+                        }
+                    ]
+                }
             },
-            "name": "Create GitHub Issue",
-            "type": "n8n-nodes-base.github",
+            "name": "Filter SAFE",
+            "type": "n8n-nodes-base.if",
             "typeVersion": 1,
             "position": [
                 450,
                 300
-            ],
-            "credentials": {
-                "githubApi": {
-                    "id": "github_main",
-                    "name": "GitHub Main"
-                }
-            }
+            ]
         },
         {
             "parameters": {
-                "taskName": "={{$json.type}} from {{$json.source}}",
-                "listId": "TODO_FILL_LIST_ID",
-                "description": "={{$json.text}}\n\nGitHub Issue: {{$node[\"Create GitHub Issue\"].json[\"html_url\"]}}"
+                "list": "<PASTE_CLICKUP_LIST_ID_HERE>",
+                "name": "⚠️ Scan Alert: {{$json.body.token}}",
+                "content": "=Scan ID: {{$json.body.scan_id}}\nVerdict: {{$json.body.verdict}}\nConfidence: {{$json.body.confidence}}\n\nReasons:\n{{$json.body.reasons.join('\\n')}}\n\nRecommendation:\n{{$json.body.recommendation}}\n\nTimestamp: {{$json.body.timestamp}}"
             },
-            "name": "Create ClickUp Task",
+            "name": "ClickUp Create",
             "type": "n8n-nodes-base.clickUp",
             "typeVersion": 1,
             "position": [
@@ -57,7 +53,22 @@
                     "id": "clickup_main",
                     "name": "ClickUp Main"
                 }
-            }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "errorMessage": "Failed to create ClickUp task",
+                "errorDescription": "={{$json.message}}",
+                "statusCode": 500
+            },
+            "name": "Error Handler",
+            "type": "n8n-nodes-base.stopAndError",
+            "typeVersion": 1,
+            "position": [
+                850,
+                450
+            ]
         }
     ],
     "connections": {
@@ -65,18 +76,30 @@
             "main": [
                 [
                     {
-                        "node": "Create GitHub Issue",
+                        "node": "Filter SAFE",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Create GitHub Issue": {
+        "Filter SAFE": {
             "main": [
                 [
                     {
-                        "node": "Create ClickUp Task",
+                        "node": "ClickUp Create",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ClickUp Create": {
+            "main": [
+                [],
+                [
+                    {
+                        "node": "Error Handler",
                         "type": "main",
                         "index": 0
                     }

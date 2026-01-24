@@ -1,36 +1,60 @@
 {
-    "name": "GitHub -> Notion Sync",
+    "name": "github_to_notion",
     "nodes": [
         {
             "parameters": {
-                "events": [
-                    "push"
-                ],
-                "owner": "crystalclearhouse-data",
-                "repository": "marketing-cognition-system"
+                "httpMethod": "POST",
+                "path": "github-to-notion",
+                "options": {}
             },
-            "name": "GitHub Trigger",
-            "type": "n8n-nodes-base.githubTrigger",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
             "position": [
                 250,
                 300
-            ],
-            "credentials": {
-                "githubApi": {
-                    "id": "github_main",
-                    "name": "GitHub Main"
-                }
-            }
+            ]
         },
         {
             "parameters": {
-                "authentication": "oAuth2",
-                "resource": "database",
-                "operation": "get",
-                "databaseId": "TODO_FILL_DATABASE_ID"
+                "resource": "databasePage",
+                "operation": "create",
+                "databaseId": "<PASTE_NOTION_DATABASE_ID_HERE>",
+                "propertiesUi": {
+                    "propertyValues": [
+                        {
+                            "key": "Scan ID",
+                            "title": "={{$json.body.scan_id}}"
+                        },
+                        {
+                            "key": "Token",
+                            "type": "richText",
+                            "textContent": "={{$json.body.token}}"
+                        },
+                        {
+                            "key": "Verdict",
+                            "type": "select",
+                            "selectValue": "={{$json.body.verdict}}"
+                        },
+                        {
+                            "key": "Confidence",
+                            "type": "number",
+                            "numberValue": "={{$json.body.confidence}}"
+                        },
+                        {
+                            "key": "Timestamp",
+                            "type": "date",
+                            "date": "={{$json.body.timestamp}}"
+                        },
+                        {
+                            "key": "Reasons",
+                            "type": "multiSelect",
+                            "multiSelectValue": "={{$json.body.reasons}}"
+                        }
+                    ]
+                }
             },
-            "name": "Notion Update",
+            "name": "Notion Create",
             "type": "n8n-nodes-base.notion",
             "typeVersion": 2,
             "position": [
@@ -42,15 +66,42 @@
                     "id": "notion_main",
                     "name": "Notion Main"
                 }
-            }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "errorMessage": "Failed to persist to Notion",
+                "errorDescription": "={{$json.message}}",
+                "statusCode": 500
+            },
+            "name": "Error Handler",
+            "type": "n8n-nodes-base.stopAndError",
+            "typeVersion": 1,
+            "position": [
+                650,
+                450
+            ]
         }
     ],
     "connections": {
-        "GitHub Trigger": {
+        "Webhook": {
             "main": [
                 [
                     {
-                        "node": "Notion Update",
+                        "node": "Notion Create",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Notion Create": {
+            "main": [
+                [],
+                [
+                    {
+                        "node": "Error Handler",
                         "type": "main",
                         "index": 0
                     }

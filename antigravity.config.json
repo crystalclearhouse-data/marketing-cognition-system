@@ -1,0 +1,15 @@
+{
+    "project": "DW-Agent-Core",
+    "mode": "write-files",
+    "language": "typescript",
+    "framework": "nextjs-app-router",
+    "rules": {
+        "no_heredoc": true,
+        "no_shell_writes": true,
+        "no_unicode_in_shell": true
+    },
+    "paths": {
+        "scanEngine": "src/app/scanEngine/index.ts",
+        "apiRoute": "src/app/api/scan/route.ts"
+    }
+}

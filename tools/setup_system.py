@@ -66,7 +66,8 @@ def setup_notion():
         return
     
     if not NOTION_ROOT_PAGE_ID:
-        log("Skipping Notion setup (No NOTION_ROOT_PAGE_ID)")
+        log("Skipping Notion setup (No )
+        ")
         return
 
     # Root: Marketing Cognition System

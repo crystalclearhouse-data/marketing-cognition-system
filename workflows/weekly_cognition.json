@@ -48,7 +48,6 @@
                 }
             }
         }
-        // Additional nodes for Notion creation and ClickUp tasks would follow similar patterns
     ],
     "connections": {
         "Cron": {
