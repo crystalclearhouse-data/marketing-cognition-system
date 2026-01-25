@@ -4,14 +4,18 @@
         {
             "parameters": {
                 "httpMethod": "POST",
-                "path": "github-to-notion",
-                "options": {}
+                "path": "scan-intake",
+                "responseMode": "lastNode",
+                "options": {},
+                "authentication": "header",
+                "headerValue": "={{$env.N8N_WEBHOOK_SECRET}}",
+                "headerName": "X-Webhook-Secret"
             },
             "name": "Webhook",
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
             "position": [
-                250,
+                100,
                 300
             ]
         },
@@ -19,7 +23,7 @@
             "parameters": {
                 "resource": "databasePage",
                 "operation": "create",
-                "databaseId": "<PASTE_NOTION_DATABASE_ID_HERE>",
+                "databaseId": "2f33bfe8c6ec80faa2c2ebf9eb875647",
                 "propertiesUi": {
                     "propertyValues": [
                         {
@@ -42,44 +46,85 @@
                             "numberValue": "={{$json.body.confidence}}"
                         },
                         {
+                            "key": "Reasons",
+                            "type": "richText",
+                            "textContent": "={{$json.body.reasons.join(', ')}}"
+                        },
+                        {
+                            "key": "Recommendation",
+                            "type": "richText",
+                            "textContent": "={{$json.body.recommendation}}"
+                        },
+                        {
                             "key": "Timestamp",
                             "type": "date",
                             "date": "={{$json.body.timestamp}}"
-                        },
-                        {
-                            "key": "Reasons",
-                            "type": "multiSelect",
-                            "multiSelectValue": "={{$json.body.reasons}}"
                         }
                     ]
                 }
             },
-            "name": "Notion Create",
+            "name": "Notion Log",
             "type": "n8n-nodes-base.notion",
             "typeVersion": 2,
             "position": [
-                450,
+                300,
                 300
             ],
             "credentials": {
                 "notionApi": {
-                    "id": "notion_main",
-                    "name": "Notion Main"
+                    "id": "notion_main"
                 }
             },
             "onError": "continueErrorOutput"
         },
         {
             "parameters": {
-                "errorMessage": "Failed to persist to Notion",
-                "errorDescription": "={{$json.message}}",
-                "statusCode": 500
+                "workflowId": "signal_intake",
+                "mode": "parameter",
+                "dataToPass": "all",
+                "options": {}
             },
-            "name": "Error Handler",
+            "name": "Execute signal_intake",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1,
+            "position": [
+                500,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "message",
+                            "value": "Signal received."
+                        },
+                        {
+                            "name": "scan_id",
+                            "value": "={{$node[\"Webhook\"].json.body.scan_id}}"
+                        }
+                    ]
+                }
+            },
+            "name": "Final Confirmation",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                700,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "errorMessage": "Fail Closed: Notion write failed",
+                "errorDescription": "Check credentials or Database ID"
+            },
+            "name": "Notion Error",
             "type": "n8n-nodes-base.stopAndError",
             "typeVersion": 1,
             "position": [
-                650,
+                300,
                 450
             ]
         }
@@ -89,19 +134,36 @@
             "main": [
                 [
                     {
-                        "node": "Notion Create",
+                        "node": "Notion Log",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Notion Create": {
+        "Notion Log": {
             "main": [
-                [],
                 [
                     {
-                        "node": "Error Handler",
+                        "node": "Execute signal_intake",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Notion Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute signal_intake": {
+            "main": [
+                [
+                    {
+                        "node": "Final Confirmation",
                         "type": "main",
                         "index": 0
                     }

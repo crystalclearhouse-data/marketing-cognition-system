@@ -2,16 +2,12 @@
     "name": "signal_intake",
     "nodes": [
         {
-            "parameters": {
-                "httpMethod": "POST",
-                "path": "signal-intake",
-                "options": {}
-            },
-            "name": "Webhook",
-            "type": "n8n-nodes-base.webhook",
+            "parameters": {},
+            "name": "Execute Workflow Trigger",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
             "typeVersion": 1,
             "position": [
-                250,
+                100,
                 300
             ]
         },
@@ -27,63 +23,165 @@
                     ]
                 }
             },
-            "name": "Filter SAFE",
+            "name": "Verdict != SAFE?",
             "type": "n8n-nodes-base.if",
             "typeVersion": 1,
             "position": [
-                450,
+                300,
                 300
             ]
         },
         {
             "parameters": {
-                "list": "<PASTE_CLICKUP_LIST_ID_HERE>",
-                "name": "⚠️ Scan Alert: {{$json.body.token}}",
-                "content": "=Scan ID: {{$json.body.scan_id}}\nVerdict: {{$json.body.verdict}}\nConfidence: {{$json.body.confidence}}\n\nReasons:\n{{$json.body.reasons.join('\\n')}}\n\nRecommendation:\n{{$json.body.recommendation}}\n\nTimestamp: {{$json.body.timestamp}}"
+                "operation": "getAll",
+                "list": "901709803846",
+                "limit": 1,
+                "filters": {
+                    "searchTerm": "={{$node[\"Execute Workflow Trigger\"].json.body.scan_id}}"
+                }
+            },
+            "name": "Search Duplicate",
+            "type": "n8n-nodes-base.clickUp",
+            "typeVersion": 1,
+            "position": [
+                500,
+                200
+            ],
+            "credentials": {
+                "clickUpApi": {
+                    "id": "clickup_main"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{$json.length}}",
+                            "operation": "equal",
+                            "value2": 0
+                        }
+                    ]
+                }
+            },
+            "name": "No Duplicate?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                700,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "keepOnlySet": true,
+                "values": {
+                    "string": [
+                        {
+                            "name": "name",
+                            "value": "=⚠️ Scan Alert: {{$node[\"Execute Workflow Trigger\"].json.body.token}} [{{$node[\"Execute Workflow Trigger\"].json.body.scan_id}}]"
+                        },
+                        {
+                            "name": "description",
+                            "value": "=Scan ID: {{$node[\"Execute Workflow Trigger\"].json.body.scan_id}}\nVerdict: {{$node[\"Execute Workflow Trigger\"].json.body.verdict}}\nConfidence: {{$node[\"Execute Workflow Trigger\"].json.body.confidence}}\nReasons: {{$node[\"Execute Workflow Trigger\"].json.body.reasons.join('\\n')}}\nRecommendation: {{$node[\"Execute Workflow Trigger\"].json.body.recommendation}}\nTimestamp: {{$node[\"Execute Workflow Trigger\"].json.body.timestamp}}"
+                        },
+                        {
+                            "name": "status",
+                            "value": "to do"
+                        }
+                    ]
+                }
+            },
+            "name": "Transform Task",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                900,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "list": "901709803846",
+                "name": "={{$json.name}}",
+                "content": "={{$json.description}}",
+                "status": "={{$json.status}}"
             },
             "name": "ClickUp Create",
             "type": "n8n-nodes-base.clickUp",
             "typeVersion": 1,
             "position": [
-                650,
-                300
+                1100,
+                200
             ],
             "credentials": {
                 "clickUpApi": {
-                    "id": "clickup_main",
-                    "name": "ClickUp Main"
+                    "id": "clickup_main"
                 }
             },
             "onError": "continueErrorOutput"
         },
         {
             "parameters": {
-                "errorMessage": "Failed to create ClickUp task",
-                "errorDescription": "={{$json.message}}",
-                "statusCode": 500
+                "errorMessage": "Fail Closed: ClickUp write failed",
+                "errorDescription": "Check List ID or Credentials"
             },
-            "name": "Error Handler",
+            "name": "ClickUp Error",
             "type": "n8n-nodes-base.stopAndError",
             "typeVersion": 1,
             "position": [
-                850,
-                450
+                1100,
+                350
             ]
         }
     ],
     "connections": {
-        "Webhook": {
+        "Execute Workflow Trigger": {
             "main": [
                 [
                     {
-                        "node": "Filter SAFE",
+                        "node": "Verdict != SAFE?",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Filter SAFE": {
+        "Verdict != SAFE?": {
+            "main": [
+                [
+                    {
+                        "node": "Search Duplicate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Search Duplicate": {
+            "main": [
+                [
+                    {
+                        "node": "No Duplicate?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "No Duplicate?": {
+            "main": [
+                [
+                    {
+                        "node": "Transform Task",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Transform Task": {
             "main": [
                 [
                     {
@@ -99,7 +197,7 @@
                 [],
                 [
                     {
-                        "node": "Error Handler",
+                        "node": "ClickUp Error",
                         "type": "main",
                         "index": 0
                     }

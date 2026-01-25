@@ -3,6 +3,7 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { executeScan } from '../../scanEngine';
 import { verifyGitHubAppAuth } from "@/lib/githubAuth";
+import { dispatchToN8N } from "@/lib/dispatchToN8N";
 import { ScanRequest } from '../../../contracts/verdict';
 
 export async function POST(req: Request) {
@@ -23,6 +24,18 @@ export async function POST(req: Request) {
 
         // 3. Execution
         const result = await executeScan(mintAddress);
+
+        // 4. Dispatch Signal (Fire-and-forget)
+        dispatchToN8N({
+            scan_id: result.scan_id,
+            verdict: result.verdict,
+            confidence: result.confidence,
+            reasons: result.reasons,
+            recommendation: result.recommendation,
+            token: result.token,
+            timestamp: new Date().toISOString()
+        }).catch(() => { });
+
         return NextResponse.json(result);
 
     } catch (error: any) {
