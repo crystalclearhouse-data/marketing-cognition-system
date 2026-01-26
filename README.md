@@ -28,6 +28,7 @@ This repository implements a deterministic, fail-closed execution loop where **S
 Execution and agent behavior are governed by strict invariants:
 - See **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** for system design
 - See **[INVARIANTS.md](docs/INVARIANTS.md)** for enforcement rules
+- See **[SECRETS_GOVERNANCE.md](docs/SECRETS_GOVERNANCE.md)** for security policy
 
 ### Quick Start
 
