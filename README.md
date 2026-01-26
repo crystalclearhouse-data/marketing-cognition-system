@@ -21,19 +21,30 @@ This system runs on a **Weekly Cognition Review**.
 
 See [execution/weekly.md](execution/weekly.md) for the checklist.
 
-## Sonia Agent
+## Execution Infrastructure
 
-**Sonia** (Structural Observation and Normalization Intelligence Agent) is an automated agent that monitors repository health and structure.
+This repository implements a deterministic, fail-closed execution loop where **Sonia** (organizer) feeds **Fred** (executor) through a shared **Canonical Record**.
+
+Execution and agent behavior are governed by strict invariants:
+- See **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** for system design
+- See **[INVARIANTS.md](docs/INVARIANTS.md)** for enforcement rules
 
 ### Quick Start
 
 ```bash
-# Run the agent
+# Run Sonia (organizer)
 npm run sonia
 
-# View the report
+# Run Fred (executor, continuous)
+npm run fred
+
+# View the status report
 cat SONIA_STATUS.md
 ```
+
+## Sonia Agent
+
+**Sonia** (Structural Observation and Normalization Intelligence Agent) is an automated agent that monitors repository health and structure.
 
 ### Features
 - 🔍 Scans repository structure for issues
@@ -43,3 +54,16 @@ cat SONIA_STATUS.md
 - 🔒 Read-only, deterministic, and fail-safe by design
 
 See [docs/SONIA_AGENT.md](docs/SONIA_AGENT.md) for full documentation.
+
+## Fred Agent
+
+**Fred** is the execution agent that reads from the Canonical Record, makes deterministic decisions, and executes safe actions.
+
+### Features
+- 🔄 Polls Canonical Record for work
+- ⚖️ Deterministic decision engine (SAFE/REVIEW/FAIL)
+- 🎯 Allowlist-based execution safety
+- 📝 Full audit trail in Canonical Record
+
+See [docs/SONIA_FRED_LOOP.md](docs/SONIA_FRED_LOOP.md) for implementation details.
+
