@@ -1,0 +1,75 @@
+name: Sonia Agent Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Run every Monday at midnight UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      issues: write # Required if auto-creating issues
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run Sonia Agent
+        run: npm run sonia
+        env:
+          # GitHub App credentials (optional, for issue creation)
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_INSTALLATION_ID: ${{ secrets.GITHUB_INSTALLATION_ID }}
+          GITHUB_PRIVATE_KEY: ${{ secrets.GITHUB_PRIVATE_KEY }}
+          
+          # Optional integrations
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      
+      - name: Upload Sonia Status Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: sonia-report-${{ github.sha }}
+          path: |
+            SONIA_STATUS.md
+            .sonia/sonia-findings.json
+            .sonia/github-proposals.json
+          retention-days: 30
+      
+      - name: Comment PR with Report (if PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const statusReport = fs.readFileSync('SONIA_STATUS.md', 'utf8');
+            
+            // Truncate if too long (GitHub comment limit)
+            const maxLength = 65000;
+            const report = statusReport.length > maxLength 
+              ? statusReport.substring(0, maxLength) + '\n\n... (truncated)'
+              : statusReport;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🤖 Sonia Agent Report\n\n${report}`
+            });

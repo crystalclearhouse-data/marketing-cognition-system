@@ -20,3 +20,26 @@ This system runs on a **Weekly Cognition Review**.
 - Update Beliefs if necessary.
 
 See [execution/weekly.md](execution/weekly.md) for the checklist.
+
+## Sonia Agent
+
+**Sonia** (Structural Observation and Normalization Intelligence Agent) is an automated agent that monitors repository health and structure.
+
+### Quick Start
+
+```bash
+# Run the agent
+npm run sonia
+
+# View the report
+cat SONIA_STATUS.md
+```
+
+### Features
+- 🔍 Scans repository structure for issues
+- 📋 Detects and tracks TODOs and tasks
+- 📊 Generates health metrics and reports
+- 🤖 Proposes GitHub issues automatically (with human approval)
+- 🔒 Read-only, deterministic, and fail-safe by design
+
+See [docs/SONIA_AGENT.md](docs/SONIA_AGENT.md) for full documentation.
