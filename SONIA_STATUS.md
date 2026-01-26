@@ -1,6 +1,6 @@
 # SONIA STATUS REPORT
 
-**Generated**: 2026-01-26T09:51:33.486Z  
+**Generated**: 2026-01-26T09:54:42.820Z  
 **Agent Version**: 1.0.0  
 **Repository**: crystalclearhouse-data/marketing-cognition-system
 
@@ -10,7 +10,7 @@
 
 - **Health Score**: 100/100
 - **Structural Issues**: 0
-- **Tasks Found**: 4
+- **Tasks Found**: 5
 - **Signals Detected**: 1
 
 ---
@@ -23,6 +23,11 @@
 
 ## Tasks & TODOs
 
+### Code TODOs (1)
+
+- `/home/runner/work/marketing-cognition-system/marketing-cognition-system/tools/setup_system.py:34`  
+  "parent": {"page_id": parent_id} if parent_id else {"type": "page_id", "page_id": "TODO"}, # Root creation is tricky without parent  
+
 ### Unchecked Tasks (4)
 
 - execution/day-0.md: 13 unchecked items
@@ -34,7 +39,7 @@
 
 ## Activity Signals
 
-- **recent_activity**: Repository has recent activity (3)
+- **recent_activity**: Repository has recent activity (4)
 
 ---
 

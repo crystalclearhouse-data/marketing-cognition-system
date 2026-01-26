@@ -3,6 +3,10 @@
 /**
  * SONIA AGENT - Structural Observation and Normalization Intelligence Agent
  * 
+ * Requirements:
+ * - Node.js 18+ (for built-in fetch API support)
+ * - npm packages: @octokit/auth-app
+ * 
  * Purpose: Deterministic, read-only agent that:
  * - Scans repository for structural issues, tasks, and signals
  * - Generates SONIA_STATUS.md with findings
@@ -30,8 +34,9 @@ const CONFIG = {
   enableGitHub: process.env.ENABLE_GITHUB !== 'false',
   enableClaude: process.env.CLAUDE_API_KEY !== undefined,
   enableSupabase: process.env.SUPABASE_URL !== undefined,
-  githubOwner: 'crystalclearhouse-data',
-  githubRepo: 'marketing-cognition-system',
+  githubOwner: process.env.GITHUB_OWNER || 'crystalclearhouse-data',
+  githubRepo: process.env.GITHUB_REPO || 'marketing-cognition-system',
+  nodeVersion: process.version, // Document Node.js version
 };
 
 // Ensure output directory exists
@@ -109,7 +114,7 @@ class RepositoryScanner {
   }
 
   scanForTodos() {
-    const todoPattern = /(TODO|FIXME|XXX|HACK):/gi;
+    const todoPattern = /(TODO|FIXME|XXX|HACK):?/gi;
     const searchDirs = ['src', 'scripts', 'tools'];
     
     for (const dir of searchDirs) {
@@ -130,9 +135,13 @@ class RepositoryScanner {
 
   scanDirForPattern(dirPath, pattern, callback) {
     const files = this.getAllFiles(dirPath);
+    const excludePatterns = [/node_modules/, /\.next/, /\.git/, /dist/, /build/];
     
     for (const file of files) {
-      if (file.includes('node_modules') || file.includes('.next')) continue;
+      // Skip excluded directories
+      if (excludePatterns.some(excludePattern => excludePattern.test(file))) {
+        continue;
+      }
       
       try {
         const content = fs.readFileSync(file, 'utf8');
@@ -145,7 +154,8 @@ class RepositoryScanner {
           }
         });
       } catch (err) {
-        // Skip files that can't be read
+        // Skip files that can't be read (binary, permission issues, etc.)
+        // This is expected for some files like images or restricted files
       }
     }
   }
@@ -358,6 +368,8 @@ class GitHubIntegration {
     }
 
     try {
+      // Note: fetch is available in Node.js 18+
+      // For earlier versions, install and use 'node-fetch'
       const response = await fetch(
         `https://api.github.com/repos/${CONFIG.githubOwner}/${CONFIG.githubRepo}/issues`,
         {
