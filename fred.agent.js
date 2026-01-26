@@ -137,14 +137,12 @@ class DecisionEngine {
       };
     }
 
-    // Check for required fields based on action type
-    const actionType = normalizedPayload.action_type;
-
-    if (!actionType) {
+    // Check for actions array
+    if (!Array.isArray(normalizedPayload.actions) || normalizedPayload.actions.length === 0) {
       return {
         verdict: 'REVIEW',
-        reason: 'No action_type specified',
-        next_action: 'Human review required: missing action type',
+        reason: 'No actions specified in payload',
+        next_action: 'Human review required: missing actions array',
       };
     }
 
@@ -156,30 +154,74 @@ class DecisionEngine {
       'notify_webhook',
     ];
 
-    if (!safeActions.includes(actionType)) {
-      return {
-        verdict: 'REVIEW',
-        reason: `Action type '${actionType}' not in safe allowlist`,
-        next_action: 'Human approval required for non-standard action',
-      };
-    }
+    // Evaluate each action
+    const results = [];
+    for (const action of normalizedPayload.actions) {
+      const actionType = action.action_type;
 
-    // Additional safety checks per action type
-    if (actionType === 'create_github_issue') {
-      if (!normalizedPayload.title || !normalizedPayload.body) {
-        return {
+      if (!actionType) {
+        results.push({
+          action,
           verdict: 'FAIL',
-          reason: 'GitHub issue missing required fields (title, body)',
-          next_action: null,
-        };
+          reason: 'Missing action_type field',
+        });
+        continue;
       }
+
+      if (!safeActions.includes(actionType)) {
+        results.push({
+          action,
+          verdict: 'REVIEW',
+          reason: `Action type '${actionType}' not in safe allowlist`,
+        });
+        continue;
+      }
+
+      // Additional safety checks per action type
+      if (actionType === 'create_github_issue') {
+        if (!action.title || !action.body) {
+          results.push({
+            action,
+            verdict: 'FAIL',
+            reason: 'GitHub issue missing required fields (title, body)',
+          });
+          continue;
+        }
+      }
+
+      // Action passed all checks
+      results.push({
+        action,
+        verdict: 'SAFE',
+        reason: 'Passed all safety checks',
+      });
     }
 
-    // Default: SAFE to execute
+    // Overall verdict: FAIL if any FAIL, REVIEW if any REVIEW, else SAFE
+    const hasFailure = results.some(r => r.verdict === 'FAIL');
+    const hasReview = results.some(r => r.verdict === 'REVIEW');
+
+    let overallVerdict = 'SAFE';
+    let reason = 'All actions passed safety checks';
+    let next_action = `Execute ${results.length} action(s)`;
+
+    if (hasFailure) {
+      overallVerdict = 'FAIL';
+      const failedActions = results.filter(r => r.verdict === 'FAIL');
+      reason = `${failedActions.length} action(s) failed validation`;
+      next_action = null;
+    } else if (hasReview) {
+      overallVerdict = 'REVIEW';
+      const reviewActions = results.filter(r => r.verdict === 'REVIEW');
+      reason = `${reviewActions.length} action(s) require human review`;
+      next_action = 'Human approval required for non-standard actions';
+    }
+
     return {
-      verdict: 'SAFE',
-      reason: 'Passed all safety checks',
-      next_action: `Execute ${actionType}`,
+      verdict: overallVerdict,
+      reason,
+      next_action,
+      action_results: results, // Include individual action verdicts
     };
   }
 }
@@ -190,64 +232,111 @@ class Executor {
     this.dryRun = dryRun;
   }
 
-  async execute(normalizedPayload, verdict) {
-    if (verdict !== 'SAFE') {
+  async execute(normalizedPayload, decision) {
+    if (decision.verdict !== 'SAFE') {
       Logger.warn('Skipping execution: verdict is not SAFE');
       return { success: false, message: 'Not SAFE to execute' };
     }
 
-    const actionType = normalizedPayload.action_type;
-    Logger.info(`Executing action: ${actionType}`);
-
-    if (this.dryRun) {
-      Logger.info('[DRY RUN] Would execute action');
-      return {
-        success: true,
-        message: `[DRY RUN] Would execute ${actionType}`,
-        dry_run: true,
-      };
+    if (!Array.isArray(normalizedPayload.actions)) {
+      Logger.error('No actions array in normalized payload');
+      return { success: false, message: 'Invalid payload: no actions array' };
     }
 
-    try {
-      switch (actionType) {
-        case 'create_github_issue':
-          return await this.createGitHubIssue(normalizedPayload);
-        
-        case 'update_status_report':
-          return await this.updateStatusReport(normalizedPayload);
-        
-        case 'log_finding':
-          return await this.logFinding(normalizedPayload);
-        
-        case 'notify_webhook':
-          return await this.notifyWebhook(normalizedPayload);
-        
-        default:
-          throw new Error(`Unknown action type: ${actionType}`);
+    Logger.info(`Executing ${normalizedPayload.actions.length} action(s)`);
+
+    const executionResults = [];
+
+    // Execute each SAFE action
+    for (const actionResult of decision.action_results) {
+      if (actionResult.verdict !== 'SAFE') {
+        Logger.warn(`Skipping action ${actionResult.action.action_type}: ${actionResult.reason}`);
+        executionResults.push({
+          action: actionResult.action,
+          success: false,
+          skipped: true,
+          reason: actionResult.reason,
+        });
+        continue;
       }
-    } catch (error) {
-      Logger.error(`Execution failed: ${error.message}`);
-      return {
-        success: false,
-        message: error.message,
-        error: error.stack,
-      };
+
+      const action = actionResult.action;
+      const actionType = action.action_type;
+      
+      Logger.info(`Executing action: ${actionType}`);
+
+      if (this.dryRun) {
+        Logger.info(`[DRY RUN] Would execute ${actionType}`);
+        executionResults.push({
+          action,
+          success: true,
+          message: `[DRY RUN] Would execute ${actionType}`,
+          dry_run: true,
+        });
+        continue;
+      }
+
+      try {
+        let result;
+        switch (actionType) {
+          case 'create_github_issue':
+            result = await this.createGitHubIssue(action);
+            break;
+          
+          case 'update_status_report':
+            result = await this.updateStatusReport(action);
+            break;
+          
+          case 'log_finding':
+            result = await this.logFinding(action);
+            break;
+          
+          case 'notify_webhook':
+            result = await this.notifyWebhook(action);
+            break;
+          
+          default:
+            throw new Error(`Unknown action type: ${actionType}`);
+        }
+
+        executionResults.push({
+          action,
+          ...result,
+        });
+      } catch (error) {
+        Logger.error(`Action ${actionType} failed: ${error.message}`);
+        executionResults.push({
+          action,
+          success: false,
+          message: error.message,
+          error: error.stack,
+        });
+      }
     }
+
+    // Overall success if all executed actions succeeded
+    const allSucceeded = executionResults.every(r => r.skipped || r.success);
+
+    return {
+      success: allSucceeded,
+      message: `Executed ${executionResults.length} action(s)`,
+      results: executionResults,
+    };
   }
 
-  async createGitHubIssue(payload) {
-    Logger.info(`[EXECUTOR] Creating GitHub issue: ${payload.title}`);
+  async createGitHubIssue(action) {
+    Logger.info(`[EXECUTOR] Creating GitHub issue: ${action.title}`);
     // Implementation would go here
     return { success: true, message: 'GitHub issue created (placeholder)' };
   }
 
-  async updateStatusReport(payload) {
+  async updateStatusReport(action) {
     Logger.info('[EXECUTOR] Updating status report');
     // Implementation would go here
     return { success: true, message: 'Status report updated (placeholder)' };
   }
 
-  async logFinding(payload) {
+  async logFinding(action) {
     Logger.info('[EXECUTOR] Logging finding');
     const logDir = path.join(CONFIG.repoPath, '.sonia', 'logs');
     if (!fs.existsSync(logDir)) {
@@ -255,13 +344,13 @@ class Executor {
     }
     
     const logFile = path.join(logDir, `${Date.now()}.json`);
-    fs.writeFileSync(logFile, JSON.stringify(payload, null, 2));
+    fs.writeFileSync(logFile, JSON.stringify(action, null, 2));
     
     return { success: true, message: `Finding logged to ${logFile}` };
   }
 
-  async notifyWebhook(payload) {
-    Logger.info(`[EXECUTOR] Notifying webhook: ${payload.webhook_url}`);
+  async notifyWebhook(action) {
+    Logger.info(`[EXECUTOR] Notifying webhook: ${action.webhook_url}`);
     // Implementation would go here
     return { success: true, message: 'Webhook notified (placeholder)' };
   }
@@ -296,7 +385,7 @@ class FredAgent {
       // Step 2: Execute if SAFE
       let executionResult = null;
       if (decision.verdict === 'SAFE') {
-        executionResult = await this.executor.execute(record.normalized_payload, decision.verdict);
+        executionResult = await this.executor.execute(record.normalized_payload, decision);
       }
 
       // Step 3: Update CR
