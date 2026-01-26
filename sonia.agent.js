@@ -441,6 +441,117 @@ class SupabaseIntegration {
   }
 }
 
+// Canonical Record Writer (Sonia's CR Interface)
+class CanonicalRecordWriter {
+  constructor() {
+    this.enabled = CONFIG.enableSupabase;
+    this.url = process.env.SUPABASE_URL;
+    this.key = process.env.SUPABASE_KEY;
+  }
+
+  async writeRecord(findings, proposals) {
+    if (!this.enabled) {
+      Logger.info('CR writing disabled (Supabase not configured)');
+      return false;
+    }
+
+    Logger.info('Writing to Canonical Record...');
+
+    try {
+      // Normalize findings into structured payload
+      const normalizedPayload = this.normalizeFindings(findings, proposals);
+
+      // Create CR entry
+      const record = {
+        source: 'sonia',
+        status: 'cleaned',
+        payload: findings, // Raw findings
+        normalized_payload: normalizedPayload, // Normalized structure
+        last_actor: 'sonia',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Write to Supabase
+      const response = await fetch(`${this.url}/rest/v1/canonical_records`, {
+        method: 'POST',
+        headers: {
+          'apikey': this.key,
+          'Authorization': `Bearer ${this.key}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(record),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        Logger.error(`Failed to write CR: ${response.status} ${error}`);
+        return false;
+      }
+
+      const result = await response.json();
+      Logger.success(`CR record created: ${result[0]?.id}`);
+      
+      return true;
+    } catch (error) {
+      Logger.error(`CR write failed: ${error.message}`);
+      return false;
+    }
+  }
+
+  normalizeFindings(findings, proposals) {
+    // Transform findings into actionable structure for Fred
+    const normalized = {
+      timestamp: findings.timestamp,
+      health_score: findings.metrics.health_score,
+      actions: [],
+    };
+
+    // Convert proposals to actions
+    for (const proposal of proposals) {
+      normalized.actions.push({
+        action_type: 'create_github_issue',
+        title: proposal.title,
+        body: proposal.body,
+        labels: proposal.labels,
+        priority: this.calculatePriority(proposal),
+      });
+    }
+
+    // Add status report update action
+    if (findings.metrics.health_score < 100) {
+      normalized.actions.push({
+        action_type: 'update_status_report',
+        health_score: findings.metrics.health_score,
+        issues_count: findings.structural.length,
+      });
+    }
+
+    // Add logging action for significant findings
+    if (findings.structural.length > 0 || findings.tasks.length > 10) {
+      normalized.actions.push({
+        action_type: 'log_finding',
+        finding_summary: {
+          structural: findings.structural.length,
+          tasks: findings.tasks.length,
+          signals: findings.signals.length,
+        },
+        timestamp: findings.timestamp,
+      });
+    }
+
+    return normalized;
+  }
+
+  calculatePriority(proposal) {
+    // Simple priority based on labels
+    if (proposal.labels.includes('bug')) return 'high';
+    if (proposal.labels.includes('enhancement')) return 'medium';
+    return 'low';
+  }
+}
+
 // Status Report Generator
 class StatusReportGenerator {
   constructor(findings) {
@@ -579,6 +690,7 @@ class SoniaAgent {
     this.github = new GitHubIntegration();
     this.claude = new ClaudeIntegration();
     this.supabase = new SupabaseIntegration();
+    this.crWriter = new CanonicalRecordWriter();
   }
 
   async run() {
@@ -606,9 +718,12 @@ class SoniaAgent {
     this.saveStatusReport(statusMarkdown);
 
     // 6. Propose GitHub issues (dry-run mode)
-    await this.proposeGitHubActions(findings);
+    const proposals = await this.proposeGitHubActions(findings);
 
-    // 7. Persist to Supabase (if enabled)
+    // 7. Write to Canonical Record (for Fred to process)
+    await this.crWriter.writeRecord(findings, proposals);
+
+    // 8. Persist to Supabase (legacy, kept for compatibility)
     await this.supabase.persistFindings(findings);
 
     Logger.success('=== SONIA AGENT COMPLETE ===');
@@ -650,6 +765,8 @@ class SoniaAgent {
     Logger.success(`${proposals.length} GitHub issue proposals saved to ${proposalsPath}`);
     
     Logger.info('Note: Issues NOT created automatically (requires human approval)');
+    
+    return proposals; // Return proposals for CR writing
   }
 
   printSummary(findings) {
@@ -683,5 +800,6 @@ module.exports = {
   GitHubIntegration,
   ClaudeIntegration,
   SupabaseIntegration,
+  CanonicalRecordWriter,
   StatusReportGenerator,
 };
