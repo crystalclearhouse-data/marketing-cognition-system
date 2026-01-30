@@ -8,7 +8,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "validate:files": "node scripts/validate-file-separation.js",
+    "preinstall": "node scripts/validate-file-separation.js || true"
   },
   "repository": {
     "type": "git",
