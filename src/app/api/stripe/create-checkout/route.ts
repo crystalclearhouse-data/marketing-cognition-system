@@ -3,11 +3,20 @@ import { auth } from "@/lib/auth";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-12-18.acacia",
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-02-24.acacia",
+    })
+  : null;
 
 export async function POST(request: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json(
+      { error: "Stripe not configured" },
+      { status: 500 }
+    );
+  }
+
   try {
     const session = await auth();
 
