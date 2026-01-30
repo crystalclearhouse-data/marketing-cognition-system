@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "validate:files": "node scripts/validate-file-separation.js",
-    "preinstall": "node scripts/validate-file-separation.js || true"
+    "postinstall": "node scripts/validate-file-separation.js || echo '\n⚠️  Warning: File separation validation found issues. Run npm run validate:files for details.\n'"
   },
   "repository": {
     "type": "git",
