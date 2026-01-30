@@ -2,6 +2,15 @@
 
 The "forever-compounding" engine for marketing: **Sense → Decide → Act → Measure → Remember → Evolve**.
 
+## ⚠️ Important: Repository Structure
+
+This repository contains **two separate Next.js applications**. See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for details.
+
+- **Root Project**: Marketing cognition API with scan engine (this directory)
+- **disco-agent-saas**: Separate SaaS application in `Documents/disco-agent-saas/`
+
+To prevent file mixing, we have implemented safeguards. Run `npm run validate:files` to verify configuration.
+
 ## The Loop
 
 1.  **Sense**: Gather signals (questions, objections, wins, losses) from the market.
@@ -20,3 +29,9 @@ This system runs on a **Weekly Cognition Review**.
 - Update Beliefs if necessary.
 
 See [execution/weekly.md](execution/weekly.md) for the checklist.
+
+## Documentation
+
+- [docs/SAFEGUARDS.md](docs/SAFEGUARDS.md) - File safeguards quick reference
+- [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) - Repository structure guide
+- [Documents/disco-agent-saas/README.md](Documents/disco-agent-saas/README.md) - disco-agent-saas guide
