@@ -102,13 +102,23 @@ function checkPathAliasConflicts() {
                 log('✅ Path aliases are different (good - prevents conflicts)', 'green');
                 log(`   Root: @/* → ${rootAlias.join(', ')}`, 'green');
                 log(`   disco-agent-saas: @/* → ${discoAlias.join(', ')}`, 'green');
-                return true;
             } else {
                 log('⚠️  Path aliases are the same - this could cause confusion', 'yellow');
                 return false;
             }
         } else {
             log('⚠️  Could not read path aliases', 'yellow');
+            return false;
+        }
+
+        // Check that Documents is excluded from root tsconfig
+        const rootExclude = rootTsConfig.exclude || [];
+        if (rootExclude.includes('Documents') || rootExclude.includes('Documents/')) {
+            log('✅ Documents directory excluded from root tsconfig', 'green');
+            return true;
+        } else {
+            log('⚠️  Documents directory not excluded from root tsconfig', 'yellow');
+            log('   Add "Documents" to exclude array in tsconfig.json', 'yellow');
             return false;
         }
     } catch (error) {
