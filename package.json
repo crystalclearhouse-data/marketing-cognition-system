@@ -15,7 +15,14 @@
     "type": "git",
     "url": "git+https://github.com/crystalclearhouse-data/marketing-cognition-system.git"
   },
-  "keywords": ["saas", "music", "nextjs", "discord", "bass-house", "disco"],
+  "keywords": [
+    "saas",
+    "music",
+    "nextjs",
+    "discord",
+    "bass-house",
+    "disco"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
@@ -32,11 +39,11 @@
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-toast": "^1.2.2",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.462.0",
-    "next": "^14.2.21",
+    "next": "^16.1.6",
     "next-auth": "^5.0.0-beta.25",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
