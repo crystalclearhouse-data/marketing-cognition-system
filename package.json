@@ -8,7 +8,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sonia": "node sonia.agent.js",
+    "fred": "node fred.agent.js"
   },
   "repository": {
     "type": "git",
